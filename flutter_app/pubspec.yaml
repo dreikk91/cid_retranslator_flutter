@@ -39,11 +39,11 @@ dependencies:
   provider: ^6.1.1
   
   # HTTP and WebSocket
-  http: ^1.1.0
-  web_socket_channel: ^2.4.0
+  http: ^1.2.0
+  web_socket_channel: ^3.0.0
   
   # Date formatting
-  intl: ^0.18.1
+  intl: ^0.20.0
   
   # Local storage
   shared_preferences: ^2.2.2
@@ -52,7 +52,7 @@ dependencies:
   system_tray: ^2.0.3
   
   # Window management
-  window_manager: ^0.3.7
+  window_manager: ^0.5.0
   
   # Data tables
   data_table_2: ^2.5.12
