@@ -28,6 +28,9 @@ jobs:
           channel: 'stable'
           cache: true
       
+      - name: Disable Flutter analytics
+        run: flutter config --no-analytics
+      
       - name: Build Go backend
         shell: powershell
         run: |
