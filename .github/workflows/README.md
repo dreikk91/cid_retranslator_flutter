@@ -91,7 +91,8 @@ git push
 
 **Версії:**
 - Go: 1.23
-- Flutter: 3.27.0 (stable channel)
+- Flutter: 3.38.4 (stable channel)
+- Dart: 3.10.3
 - Windows runner: windows-latest
 
 **Оптимізації:**

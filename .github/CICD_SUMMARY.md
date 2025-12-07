@@ -68,7 +68,7 @@ git push origin v1.0.0
 
 - **Runner:** windows-latest
 - **Go:** 1.23 з оптимізацією `-ldflags="-s -w"`
-- **Flutter:** 3.27.0 stable
+- **Flutter:** 3.38.4 stable (Dart 3.10.3)
 - **Час збірки:** ~5-10 хвилин
 - **Розмір пакету:** залежить від проекту
 
