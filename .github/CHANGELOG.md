@@ -32,6 +32,26 @@ Because cid_retranslator requires SDK version ^3.10.3, version solving failed.
 4. ✅ Перевірено локально: `flutter pub get` - успішно!
 5. ✅ Додано підтримку Linux збірок
 
+#### Проблема #2: Конфлікт версій flutter_lints
+**Помилка:**
+```
+flutter_lints 6.0.0 requires SDK version ^3.8.0
+```
+
+**Рішення:**
+- ✅ Downgraded `flutter_lints` до `^5.0.0` (сумісна з Dart 3.6.0)
+
+#### Проблема #3: Помилка Matrix Shell
+**Помилка:**
+```
+Unrecognized named-value: 'matrix' ... within expression: matrix.shell
+```
+
+**Рішення:**
+- ✅ Розділено кроки збірки на окремі блоки для Windows та Linux
+- ✅ Використано нативні `shell: powershell` та `shell: bash` замість динамічних
+- ✅ Покращено стабільність скриптів пакування
+
 ### 📝 Оновлена документація
 - Версії Flutter/Dart в усіх README
 - Додані кроки з вимкненням analytics
@@ -45,7 +65,7 @@ Because cid_retranslator requires SDK version ^3.10.3, version solving failed.
 ```bash
 # 1. Закомітьте зміни
 git add .
-git commit -m "Add GitHub CI/CD with Linux support"
+git commit -m "Fix CI dependencies and matrix shell issues"
 git push
 
 # 2. Перевірте збірку в Actions

@@ -64,12 +64,23 @@ jobs:
       - name: Enable Desktop Support
         run: flutter config --enable-${{ matrix.build_target }}-desktop
 
-      # ========== Build Go Backend ==========
-      - name: Build Go backend
-        shell: ${{ matrix.shell }}
+      # ========== Build Go Backend (Windows) ==========
+      - name: Build Go backend (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: powershell
         run: |
           echo "Building Go backend..."
-          go build -ldflags="-s -w" -o cid_retranslator_backend${{ matrix.exe_ext }} main_headless.go
+          go build -ldflags="-s -w" -o cid_retranslator_backend.exe main_headless.go
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          echo "Go backend build completed"
+
+      # ========== Build Go Backend (Linux) ==========
+      - name: Build Go backend (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: |
+          echo "Building Go backend..."
+          go build -ldflags="-s -w" -o cid_retranslator_backend main_headless.go
           echo "Go backend build completed"
 
       # ========== Build Flutter App ==========
@@ -86,53 +97,56 @@ jobs:
         working-directory: flutter_app
         run: flutter build ${{ matrix.build_target }} --release
 
-      # ========== Package Everything ==========
-      - name: Prepare release package
-        shell: ${{ matrix.shell }}
+      # ========== Package (Windows) ==========
+      - name: Prepare release package (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: powershell
         run: |
-          # Determine version
-          if [ "${{ matrix.shell }}" == "powershell" ]; then
-            $version = "${{ github.ref_name }}"
-            if ("$version" -eq "" -or "$version" -eq "${{ github.sha }}") {
-              $version = "dev-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
-            }
-            echo "VERSION=$version" >> $env:GITHUB_ENV
-            $packageDir = "cid_retranslator_${version}_${{ matrix.build_target }}"
-            New-Item -ItemType Directory -Path $packageDir -Force
-            
-            Copy-Item -Path "${{ matrix.asset_path }}/*" -Destination $packageDir -Recurse -Force
-            Copy-Item -Path "cid_retranslator_backend.exe" -Destination $packageDir -Force
-            
-            if (Test-Path "config.yaml") { Copy-Item -Path "config.yaml" -Destination $packageDir -Force }
-            if (Test-Path "icon.ico") { Copy-Item -Path "icon.ico" -Destination $packageDir -Force }
-            if (Test-Path "icon.png") { Copy-Item -Path "icon.png" -Destination $packageDir -Force }
-            Get-ChildItem -Path . -Filter "README*.md" | ForEach-Object { Copy-Item -Path $_.FullName -Destination $packageDir -Force }
-            
-            $archiveName = "${packageDir}.zip"
-            Compress-Archive -Path $packageDir -DestinationPath $archiveName -Force
-            echo "ARCHIVE_NAME=$archiveName" >> $env:GITHUB_ENV
-          else
-            # Bash (Linux)
-            VERSION="${{ github.ref_name }}"
-            if [[ "$VERSION" == "" || "$VERSION" == "${{ github.sha }}" ]]; then
-              VERSION="dev-$(date +'%Y%m%d-%H%M%S')"
-            fi
-            echo "VERSION=$VERSION" >> $GITHUB_ENV
-            
-            PACKAGE_DIR="cid_retranslator_${VERSION}_${{ matrix.build_target }}"
-            mkdir -p "$PACKAGE_DIR"
-            
-            cp -r ${{ matrix.asset_path }}/* "$PACKAGE_DIR/"
-            cp cid_retranslator_backend "$PACKAGE_DIR/"
-            
-            [ -f config.yaml ] && cp config.yaml "$PACKAGE_DIR/"
-            [ -f icon.png ] && cp icon.png "$PACKAGE_DIR/"
-            cp README*.md "$PACKAGE_DIR/" 2>/dev/null || true
-            
-            ARCHIVE_NAME="${PACKAGE_DIR}.tar.gz"
-            tar -czf "$ARCHIVE_NAME" "$PACKAGE_DIR"
-            echo "ARCHIVE_NAME=$ARCHIVE_NAME" >> $GITHUB_ENV
+          $version = "${{ github.ref_name }}"
+          if ("$version" -eq "" -or "$version" -eq "${{ github.sha }}") {
+            $version = "dev-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+          }
+          echo "VERSION=$version" >> $env:GITHUB_ENV
+          
+          $packageDir = "cid_retranslator_${version}_windows"
+          New-Item -ItemType Directory -Path $packageDir -Force
+          
+          Copy-Item -Path "flutter_app/build/windows/x64/runner/Release/*" -Destination $packageDir -Recurse -Force
+          Copy-Item -Path "cid_retranslator_backend.exe" -Destination $packageDir -Force
+          
+          if (Test-Path "config.yaml") { Copy-Item -Path "config.yaml" -Destination $packageDir -Force }
+          if (Test-Path "icon.ico") { Copy-Item -Path "icon.ico" -Destination $packageDir -Force }
+          if (Test-Path "icon.png") { Copy-Item -Path "icon.png" -Destination $packageDir -Force }
+          Get-ChildItem -Path . -Filter "README*.md" | ForEach-Object { Copy-Item -Path $_.FullName -Destination $packageDir -Force }
+          
+          $archiveName = "${packageDir}.zip"
+          Compress-Archive -Path $packageDir -DestinationPath $archiveName -Force
+          echo "ARCHIVE_NAME=$archiveName" >> $env:GITHUB_ENV
+
+      # ========== Package (Linux) ==========
+      - name: Prepare release package (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: |
+          VERSION="${{ github.ref_name }}"
+          if [[ "$VERSION" == "" || "$VERSION" == "${{ github.sha }}" ]]; then
+            VERSION="dev-$(date +'%Y%m%d-%H%M%S')"
           fi
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          
+          PACKAGE_DIR="cid_retranslator_${VERSION}_linux"
+          mkdir -p "$PACKAGE_DIR"
+          
+          cp -r flutter_app/build/linux/x64/release/bundle/* "$PACKAGE_DIR/"
+          cp cid_retranslator_backend "$PACKAGE_DIR/"
+          
+          [ -f config.yaml ] && cp config.yaml "$PACKAGE_DIR/"
+          [ -f icon.png ] && cp icon.png "$PACKAGE_DIR/"
+          cp README*.md "$PACKAGE_DIR/" 2>/dev/null || true
+          
+          ARCHIVE_NAME="${PACKAGE_DIR}.tar.gz"
+          tar -czf "$ARCHIVE_NAME" "$PACKAGE_DIR"
+          echo "ARCHIVE_NAME=$ARCHIVE_NAME" >> $GITHUB_ENV
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
