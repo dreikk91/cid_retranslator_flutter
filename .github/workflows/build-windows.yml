@@ -1,0 +1,70 @@
+name: Build Windows
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache: true
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.27.0'
+          channel: 'stable'
+          cache: true
+      
+      - name: Build Go backend
+        shell: powershell
+        run: |
+          echo "Building Go backend..."
+          go build -ldflags="-s -w" -o cid_retranslator_backend.exe main_headless.go
+      
+      - name: Get Flutter dependencies
+        working-directory: flutter_app
+        run: flutter pub get
+      
+      - name: Build Flutter application
+        working-directory: flutter_app
+        run: flutter build windows --release
+      
+      - name: Package application
+        shell: powershell
+        run: |
+          $packageDir = "cid_retranslator_windows"
+          New-Item -ItemType Directory -Path $packageDir -Force
+          
+          # Copy Flutter app
+          Copy-Item -Path "flutter_app/build/windows/x64/runner/Release/*" -Destination $packageDir -Recurse -Force
+          
+          # Copy Go backend
+          Copy-Item -Path "cid_retranslator_backend.exe" -Destination $packageDir -Force
+          
+          # Copy config if exists
+          if (Test-Path "config.yaml") {
+            Copy-Item -Path "config.yaml" -Destination $packageDir -Force
+          }
+          
+          # Create archive
+          Compress-Archive -Path $packageDir -DestinationPath "cid_retranslator_windows.zip" -Force
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cid_retranslator_windows
+          path: cid_retranslator_windows.zip
+          retention-days: 30

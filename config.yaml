@@ -1,0 +1,35 @@
+server:
+    host: ""
+    port: ""
+    maxdeviceevents: 0
+    maxglobalevents: 0
+client:
+    host: ""
+    port: ""
+    reconnectinitial: 0s
+    reconnectmax: 0s
+queue:
+    buffersize: 0
+logging:
+    filename: ""
+    maxsize: 0
+    maxbackups: 0
+    maxage: 0
+    compress: false
+    level: ""
+cidrules:
+    requiredprefix: ""
+    validlength: 0
+    testcodemap: {}
+    accnumoffset: 0
+    accnumadd: 0
+monitoring:
+    ppktimeout: 0s
+ui:
+    startminimized: false
+    minimizetotray: false
+    closetotray: false
+http:
+    enabled: true
+    host: 0.0.0.0
+    port: "8080"

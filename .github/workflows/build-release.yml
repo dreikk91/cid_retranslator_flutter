@@ -1,0 +1,129 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ main, master ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      # ========== Setup Go ==========
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache: true
+      
+      # ========== Setup Flutter ==========
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.27.0'
+          channel: 'stable'
+          cache: true
+      
+      - name: Enable Windows desktop
+        working-directory: flutter_app
+        run: flutter config --enable-windows-desktop
+      
+      # ========== Build Go Backend ==========
+      - name: Build Go backend (headless)
+        shell: powershell
+        run: |
+          echo "Building Go backend..."
+          go build -ldflags="-s -w" -o cid_retranslator_backend.exe main_headless.go
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          echo "Go backend build completed"
+      
+      # ========== Build Flutter App ==========
+      - name: Get Flutter dependencies
+        working-directory: flutter_app
+        run: flutter pub get
+      
+      - name: Analyze Flutter code
+        working-directory: flutter_app
+        run: flutter analyze
+        continue-on-error: true
+      
+      - name: Build Flutter Windows application
+        working-directory: flutter_app
+        run: flutter build windows --release
+      
+      # ========== Package Everything ==========
+      - name: Prepare release package
+        shell: powershell
+        run: |
+          # Determine version
+          $version = "${{ github.ref_name }}"
+          if ("$version" -eq "" -or "$version" -eq "${{ github.sha }}") {
+            $version = "dev-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+          }
+          echo "Building version: $version"
+          
+          # Create package directory
+          $packageDir = "cid_retranslator_${version}_windows"
+          New-Item -ItemType Directory -Path $packageDir -Force
+          
+          # Copy Flutter app
+          Copy-Item -Path "flutter_app/build/windows/x64/runner/Release/*" -Destination $packageDir -Recurse -Force
+          
+          # Copy Go backend
+          Copy-Item -Path "cid_retranslator_backend.exe" -Destination $packageDir -Force
+          
+          # Copy configuration files if they exist
+          if (Test-Path "config.yaml") {
+            Copy-Item -Path "config.yaml" -Destination $packageDir -Force
+          }
+          
+          # Copy icons if they exist
+          if (Test-Path "icon.ico") {
+            Copy-Item -Path "icon.ico" -Destination $packageDir -Force
+          }
+          if (Test-Path "icon.png") {
+            Copy-Item -Path "icon.png" -Destination $packageDir -Force
+          }
+          
+          # Copy README files
+          Get-ChildItem -Path . -Filter "README*.md" | ForEach-Object {
+            Copy-Item -Path $_.FullName -Destination $packageDir -Force
+          }
+          
+          # Create ZIP archive
+          $archiveName = "${packageDir}.zip"
+          Compress-Archive -Path $packageDir -DestinationPath $archiveName -Force
+          
+          echo "Package created: $archiveName"
+          echo "ARCHIVE_NAME=$archiveName" >> $env:GITHUB_ENV
+          echo "VERSION=$version" >> $env:GITHUB_ENV
+          
+          # Show package contents
+          echo "Package contents:"
+          Get-ChildItem -Path $packageDir -Recurse -Name
+      
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cid_retranslator_windows
+          path: ${{ env.ARCHIVE_NAME }}
+          retention-days: 30
+      
+      - name: Upload to release (if tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ${{ env.ARCHIVE_NAME }}
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

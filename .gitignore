@@ -1,0 +1,47 @@
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+
+# Go vendor
+vendor/
+
+# Binaries
+cid_retranslator_backend
+cid_retranslator_headless
+cid_retranslator
+cid_retranslator_walk
+
+# Logs
+*.log
+*.log.gz
+app.log
+app-*.log.gz
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.zip
+*.tar.gz
+rsrc.syso
+
+# Config (uncomment if you don't want to commit config)
+# config.yaml
+# events.json
+
+# Flutter/Dart is in flutter_app subdirectory
+# .github workflows should be committed
