@@ -1,0 +1,74 @@
+name: Build Linux
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev
+      
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache: true
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.4'
+          channel: 'stable'
+          cache: true
+      
+      - name: Disable Flutter analytics
+        run: flutter config --no-analytics
+      
+      - name: Build Go backend
+        run: |
+          echo "Building Go backend..."
+          go build -ldflags="-s -w" -o cid_retranslator_backend main_headless.go
+      
+      - name: Get Flutter dependencies
+        working-directory: flutter_app
+        run: flutter pub get
+      
+      - name: Build Flutter application
+        working-directory: flutter_app
+        run: flutter build linux --release
+      
+      - name: Package application
+        run: |
+          PACKAGE_DIR="cid_retranslator_linux"
+          mkdir -p "$PACKAGE_DIR"
+          
+          # Copy Flutter app
+          cp -r flutter_app/build/linux/x64/release/bundle/* "$PACKAGE_DIR/"
+          
+          # Copy Go backend
+          cp cid_retranslator_backend "$PACKAGE_DIR/"
+          
+          # Copy config if exists
+          [ -f config.yaml ] && cp config.yaml "$PACKAGE_DIR/"
+          
+          # Create archive
+          tar -czf cid_retranslator_linux.tar.gz "$PACKAGE_DIR"
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cid_retranslator_linux
+          path: cid_retranslator_linux.tar.gz
+          retention-days: 30

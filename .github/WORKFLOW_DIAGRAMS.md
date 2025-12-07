@@ -6,60 +6,59 @@
 graph TB
     A[Push to GitHub] --> B{Trigger Type}
     B -->|Regular Push| C[build-windows.yml]
-    B -->|Tag v*| D[build-release.yml]
+    B -->|Regular Push| D[build-linux.yml]
+    B -->|Tag v*| E[build-release.yml]
     
-    C --> E1[Setup Go 1.23]
-    C --> E2[Setup Flutter 3.27]
+    subgraph "Parallel Matrix Build"
+        E --> F1[Windows Build]
+        E --> F2[Linux Build]
+    end
     
-    D --> F1[Setup Go 1.23]
-    D --> F2[Setup Flutter 3.27]
+    F1 --> G1[Setup Env]
+    F2 --> G2[Setup Env + Deps]
     
-    E1 --> G1[Build Go Backend]
-    E2 --> G2[Build Flutter App]
+    G1 --> H1[Build Go .exe]
+    G2 --> H2[Build Go binary]
     
-    F1 --> H1[Build Go Backend -ldflags]
-    F2 --> H2[Flutter Analyze]
-    H2 --> H3[Build Flutter App]
+    H1 --> I1[Build Flutter Win]
+    H2 --> I2[Build Flutter Linux]
     
-    G1 --> I1[Package Together]
-    G2 --> I1
+    I1 --> J1[Package ZIP]
+    I2 --> J2[Package tar.gz]
     
-    H1 --> I2[Package + Versioning]
-    H3 --> I2
-    
-    I1 --> J1[Upload Artifact]
-    I2 --> J2[Upload Artifact]
-    I2 --> K[Create GitHub Release]
-    
-    J1 --> L1[Available in Actions]
-    J2 --> L2[Available in Actions]
-    K --> L3[Available in Releases]
+    J1 --> K[Create Release]
+    J2 --> K
     
     style A fill:#e1f5ff
-    style C fill:#fff4e1
-    style D fill:#ffe1e1
+    style E fill:#ffe1e1
     style K fill:#d4edda
-    style L3 fill:#d4edda
 ```
 
 ## Package Contents
 
+### Windows (.zip)
 ```mermaid
 graph LR
     A[ZIP Package] --> B[cid_retranslator.exe]
     A --> C[cid_retranslator_backend.exe]
     A --> D[data/]
     A --> E[config.yaml]
-    A --> F[icons]
-    A --> G[README files]
-    
-    B -->|Flutter UI| B1[Windows Desktop App]
-    C -->|Go Server| C1[WebSocket Backend]
-    D -->|Resources| D1[Flutter Assets]
     
     style A fill:#d4edda
     style B fill:#cfe2ff
-    style C fill:#cfe2ff
+```
+
+### Linux (.tar.gz)
+```mermaid
+graph LR
+    A[Tar.gz Package] --> B[cid_retranslator]
+    A --> C[cid_retranslator_backend]
+    A --> D[data/]
+    A --> E[lib/]
+    A --> F[config.yaml]
+    
+    style A fill:#fff3cd
+    style B fill:#ffecb3
 ```
 
 ## Release Workflow

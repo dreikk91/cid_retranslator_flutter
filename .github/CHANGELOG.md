@@ -3,8 +3,9 @@
 ## 2025-12-07 - Initial Setup + Fixes
 
 ### ✅ Створено
-- `.github/workflows/build-windows.yml` - базовий workflow
-- `.github/workflows/build-release.yml` - продакшн workflow з релізами
+- `.github/workflows/build-windows.yml` - базовий workflow (Windows)
+- `.github/workflows/build-linux.yml` - базовий workflow (Linux)
+- `.github/workflows/build-release.yml` - мультиплатформний workflow (Windows + Linux)
 - `.github/workflows/README.md` - повна документація
 - `.github/QUICK_START.md` - швидкий старт
 - `.github/CICD_SUMMARY.md` - короткий огляд
@@ -29,11 +30,13 @@ Because cid_retranslator requires SDK version ^3.10.3, version solving failed.
 2. ✅ Виправлено версію SDK в `pubspec.yaml`: `>=3.10.3 <4.0.0`
 3. ✅ Додано крок вимкнення analytics для пришвидшення збірок
 4. ✅ Перевірено локально: `flutter pub get` - успішно!
+5. ✅ Додано підтримку Linux збірок
 
 ### 📝 Оновлена документація
 - Версії Flutter/Dart в усіх README
 - Додані кроки з вимкненням analytics
 - Оновлені технічні деталі
+- Додано опис Linux workflows
 
 ### 🎯 Поточний стан
 
@@ -42,7 +45,7 @@ Because cid_retranslator requires SDK version ^3.10.3, version solving failed.
 ```bash
 # 1. Закомітьте зміни
 git add .
-git commit -m "Add GitHub CI/CD with fixes"
+git commit -m "Add GitHub CI/CD with Linux support"
 git push
 
 # 2. Перевірте збірку в Actions
@@ -61,18 +64,13 @@ git push origin v1.0.0
 | Flutter | 3.38.4 | ✅ | ✅ |
 | Dart | 3.10.3 | ✅ | ✅ |
 | Windows | - | Linux | windows-latest |
+| Linux | - | Linux | ubuntu-latest |
 
 ### 📦 Build артефакти
 
 Кожна збірка створює:
-```
-cid_retranslator_vX.X.X_windows.zip
-  ├── cid_retranslator.exe          (Flutter UI)
-  ├── cid_retranslator_backend.exe  (Go server)
-  ├── data/                         (Flutter resources)
-  ├── config.yaml, icons, READMEs
-  └── ...
-```
+1. `cid_retranslator_vX.X.X_windows.zip`
+2. `cid_retranslator_vX.X.X_linux.tar.gz`
 
 ---
 
